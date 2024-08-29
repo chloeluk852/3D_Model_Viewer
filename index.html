@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Model Viewer</title>
+    <style>
+        body { margin: 0; background-color: white; color: black; font-family: Arial, sans-serif; }
+        canvas { display: block; }
+        #info { position: absolute; top: 10px; width: 100%; text-align: center; }
+        #error { position: absolute; bottom: 10px; width: 100%; text-align: center; color: red; }
+    </style>
+</head>
+<body>
+    <div id="info">Loading 3D Model...</div>
+    <div id="error"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script>
+        let scene, camera, renderer, model;
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0xFFFFFF, 1); // Set renderer background to white
+            document.body.appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0x404040, 2);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            directionalLight.position.set(1, 1, 1);
+            scene.add(directionalLight);
+            const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.5);
+            directionalLight2.position.set(-1, 1, -1);
+            scene.add(directionalLight2);
+
+            const loader = new THREE.GLTFLoader();
+            loader.load(
+                'elgar_island.gltf',
+                function (gltf) {
+                    model = gltf.scene;
+                    scene.add(model);
+                    document.getElementById('info').textContent = '3D Model Loaded - Click and drag to rotate';
+                },
+                function (xhr) {
+                    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+                },
+                function (error) {
+                    console.error('An error happened', error);
+                    document.getElementById('info').textContent = 'Error loading 3D model';
+                    document.getElementById('error').textContent = 'Error details: ' + error.message + '\n' + error.stack;
+                }
+            );
+
+            camera.position.z = 5;
+
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.25;
+            controls.screenSpacePanning = false;
+            controls.maxPolarAngle = Math.PI / 2;
+
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        window.addEventListener('resize', onWindowResize, false);
+
+        window.addEventListener('error', function(e) {
+            document.getElementById('error').textContent += '\nGlobal error: ' + e.message + '\n' + e.error.stack;
+        });
+
+        init();
+    </script>
+</body>
+</html>
